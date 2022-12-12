@@ -1,6 +1,6 @@
 {
-    "name": "phpoffice/phpspreadsheet",
-    "description": "PHPSpreadsheet - Read, Create and Write Spreadsheet documents in PHP - Spreadsheet engine",
+    "name": "totumonline/phpspreadsheet",
+    "description": "FORK! PHPSpreadsheet - Read, Create and Write Spreadsheet documents in PHP - Spreadsheet engine",
     "keywords": [
         "PHP",
         "OpenXML",
