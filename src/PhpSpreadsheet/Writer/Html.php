@@ -181,7 +181,7 @@ class Html extends BaseWriter
      *
      * @return string
      */
-    public function generateHtmlAll()
+    public function generateHtmlAll($area = null)
     {
         // garbage collect
         $this->spreadsheet->garbageCollect();
@@ -205,7 +205,7 @@ class Html extends BaseWriter
         }
 
         // Write data
-        $html .= $this->generateSheetData();
+        $html .= $this->generateSheetData($area);
 
         // Write footer
         $html .= $this->generateHTMLFooter();
@@ -323,7 +323,7 @@ class Html extends BaseWriter
      */
     public function setGenerateSheetNavigationBlock($generateSheetNavigationBlock)
     {
-        $this->generateSheetNavigationBlock = (bool) $generateSheetNavigationBlock;
+        $this->generateSheetNavigationBlock = (bool)$generateSheetNavigationBlock;
 
         return $this;
     }
@@ -343,7 +343,8 @@ class Html extends BaseWriter
     private static function generateMeta(?string $val, string $desc): string
     {
         return $val
-            ? ('      <meta name="' . $desc . '" content="' . htmlspecialchars($val, Settings::htmlEntityFlags()) . '" />' . PHP_EOL)
+            ? ('      <meta name="' . $desc . '" content="' . htmlspecialchars($val,
+                    Settings::htmlEntityFlags()) . '" />' . PHP_EOL)
             : '';
     }
 
@@ -365,7 +366,8 @@ class Html extends BaseWriter
         $html .= '  <head>' . PHP_EOL;
         $html .= '      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />' . PHP_EOL;
         $html .= '      <meta name="generator" content="PhpSpreadsheet, https://github.com/PHPOffice/PhpSpreadsheet" />' . PHP_EOL;
-        $html .= '      <title>' . htmlspecialchars($properties->getTitle(), Settings::htmlEntityFlags()) . '</title>' . PHP_EOL;
+        $html .= '      <title>' . htmlspecialchars($properties->getTitle(),
+                Settings::htmlEntityFlags()) . '</title>' . PHP_EOL;
         $html .= self::generateMeta($properties->getCreator(), 'author');
         $html .= self::generateMeta($properties->getTitle(), 'title');
         $html .= self::generateMeta($properties->getDescription(), 'description');
@@ -436,7 +438,7 @@ class Html extends BaseWriter
      *
      * @return string
      */
-    public function generateSheetData()
+    public function generateSheetData($area = null)
     {
         $sheets = $this->generateSheetPrep();
 
@@ -450,7 +452,7 @@ class Html extends BaseWriter
             $html .= $this->generateTableHeader($sheet);
 
             // Get worksheet dimension
-            [$min, $max] = explode(':', $sheet->calculateWorksheetDataDimension());
+            [$min, $max] = explode(':', $area ?? $sheet->calculateWorksheetDataDimension());
             [$minCol, $minRow] = Coordinate::indexesFromString($min);
             [$maxCol, $maxRow] = Coordinate::indexesFromString($max);
 
@@ -651,13 +653,13 @@ class Html extends BaseWriter
                 $filename = $drawing->getPath();
 
                 // Strip off eventual '.'
-                $filename = (string) preg_replace('/^[.]/', '', $filename);
+                $filename = (string)preg_replace('/^[.]/', '', $filename);
 
                 // Prepend images root
                 $filename = $this->getImagesRoot() . $filename;
 
                 // Strip off eventual '.' if followed by non-/
-                $filename = (string) preg_replace('@^[.]([^/])@', '$1', $filename);
+                $filename = (string)preg_replace('@^[.]([^/])@', '$1', $filename);
 
                 // Convert UTF8 data to PCDATA
                 $filename = htmlspecialchars($filename, Settings::htmlEntityFlags());
@@ -684,7 +686,7 @@ class Html extends BaseWriter
                 if ($imageResource) {
                     ob_start(); //  Let's start output buffering.
                     imagepng($imageResource); //  This will normally output the image, but because of ob_start(), it won't.
-                    $contents = (string) ob_get_contents(); //  Instead, output above is saved to $contents
+                    $contents = (string)ob_get_contents(); //  Instead, output above is saved to $contents
                     ob_end_clean(); //  End the output buffer.
 
                     $dataUri = 'data:image/png;base64,' . base64_encode($contents);
@@ -760,7 +762,8 @@ class Html extends BaseWriter
         // Start styles
         if ($generateSurroundingHTML) {
             $html .= '    <style type="text/css">' . PHP_EOL;
-            $html .= (array_key_exists('html', $css)) ? ('      html { ' . $this->assembleCSS($css['html']) . ' }' . PHP_EOL) : '';
+            $html .= (array_key_exists('html',
+                $css)) ? ('      html { ' . $this->assembleCSS($css['html']) . ' }' . PHP_EOL) : '';
         }
 
         // Write all other styles
@@ -982,7 +985,7 @@ class Html extends BaseWriter
         if ($textAlign) {
             $css['text-align'] = $textAlign;
             if (in_array($textAlign, ['left', 'right'])) {
-                $css['padding-' . $textAlign] = (string) ((int) $alignment->getIndent() * 9) . 'px';
+                $css['padding-' . $textAlign] = (string)((int)$alignment->getIndent() * 9) . 'px';
             }
         }
         $rotation = $alignment->getTextRotation();
@@ -1321,7 +1324,7 @@ class Html extends BaseWriter
 
             // Converts the cell content so that spaces occuring at beginning of each new line are replaced by &nbsp;
             // Example: "  Hello\n to the world" is converted to "&nbsp;&nbsp;Hello\n&nbsp;to the world"
-            $cellData = (string) preg_replace('/(?m)(?:^|\\G) /', '&nbsp;', $cellData);
+            $cellData = (string)preg_replace('/(?m)(?:^|\\G) /', '&nbsp;', $cellData);
 
             // convert newline "\n" to '<br>'
             $cellData = nl2br($cellData);
@@ -1409,7 +1412,7 @@ class Html extends BaseWriter
                     $width += $this->columnWidths[$sheetIndex][$i];
                 }
             }
-            $xcssClass['width'] = (string) $width . 'pt';
+            $xcssClass['width'] = (string)$width . 'pt';
             // We must also explicitly write the height of the <td> element because TCPDF
             // does not recognize e.g. <tr style="height:50pt">
             if (isset($this->cssStyles['table.sheet' . $sheetIndex . ' tr.row' . $row]['height'])) {
@@ -1466,7 +1469,9 @@ class Html extends BaseWriter
 
             // Hyperlink?
             if ($worksheet->hyperlinkExists($coordinate) && !$worksheet->getHyperlink($coordinate)->isInternal()) {
-                $cellData = '<a href="' . htmlspecialchars($worksheet->getHyperlink($coordinate)->getUrl(), Settings::htmlEntityFlags()) . '" title="' . htmlspecialchars($worksheet->getHyperlink($coordinate)->getTooltip(), Settings::htmlEntityFlags()) . '">' . $cellData . '</a>';
+                $cellData = '<a href="' . htmlspecialchars($worksheet->getHyperlink($coordinate)->getUrl(),
+                        Settings::htmlEntityFlags()) . '" title="' . htmlspecialchars($worksheet->getHyperlink($coordinate)->getTooltip(),
+                        Settings::htmlEntityFlags()) . '">' . $cellData . '</a>';
             }
 
             // Should the cell be written or is it swallowed by a rowspan or colspan?
@@ -1491,7 +1496,17 @@ class Html extends BaseWriter
 
             // Write
             if ($writeCell) {
-                $this->generateRowWriteCell($html, $worksheet, $coordinate, $cellType, $cellData, $colSpan, $rowSpan, $cssClass, $colNum, $sheetIndex, $row);
+                $this->generateRowWriteCell($html,
+                    $worksheet,
+                    $coordinate,
+                    $cellType,
+                    $cellData,
+                    $colSpan,
+                    $rowSpan,
+                    $cssClass,
+                    $colNum,
+                    $sheetIndex,
+                    $row);
             }
 
             // Next column
